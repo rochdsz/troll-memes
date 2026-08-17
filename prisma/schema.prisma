@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String         @id @default(cuid())
+  username      String         @unique
+  email         String         @unique
+  password      String
+  createdAt     DateTime       @default(now())
+  posts         Post[]
+  likes         Like[]
+  notifications Notification[] @relation("Recipient")
+  actions       Notification[] @relation("Actor")
+}
+
+model Post {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  imageUrl      String
+  likesCount    Int            @default(0)
+  createdAt     DateTime       @default(now())
+  authorId      String
+  author        User           @relation(fields: [authorId], references: [id])
+  likes         Like[]
+  notifications Notification[]
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId]) // A user can only like a post once
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  recipientId String
+  actorId     String
+  postId      String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  recipient User @relation("Recipient", fields: [recipientId], references: [id])
+  actor     User @relation("Actor", fields: [actorId], references: [id])
+  post      Post @relation(fields: [postId], references: [id])
+}
