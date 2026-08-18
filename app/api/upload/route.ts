@@ -11,13 +11,18 @@ export async function POST(req: Request) {
 
   try {
     const { filename, contentType } = await req.json();
-    if (!filename || !contentType) {
-      return NextResponse.json({ message: "Missing file details" }, { status: 400 });
+    if (!filename) {
+      return NextResponse.json({ message: "Missing filename" }, { status: 400 });
     }
 
-    const { uploadUrl, publicUrl } = await generateV4UploadSignedUrl(filename, contentType);
+    const type = contentType || "image/jpeg";
+    const { uploadUrl, publicUrl } = await generateV4UploadSignedUrl(filename, type);
     return NextResponse.json({ uploadUrl, publicUrl });
-  } catch (error) {
-    return NextResponse.json({ message: "Failed to generate upload URL" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Error generating signed upload URL:", error);
+    return NextResponse.json(
+      { message: error?.message || "Failed to generate upload URL" },
+      { status: 500 }
+    );
   }
 }

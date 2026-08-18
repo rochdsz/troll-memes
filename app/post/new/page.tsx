@@ -33,20 +33,35 @@ export default function NewPostPage() {
     setError("");
 
     try {
+      const mimeType = file.type || "image/jpeg";
+
       // 1. Request Signed Upload URL
       const signedRes = await fetch("/api/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name, contentType: file.type }),
+        body: JSON.stringify({ filename: file.name, contentType: mimeType }),
       });
-      const { uploadUrl, publicUrl } = await signedRes.json();
+      
+      const signedData = await signedRes.json();
+      if (!signedRes.ok) {
+        throw new Error(signedData.message || "Failed to get signed upload URL");
+      }
+
+      const { uploadUrl, publicUrl } = signedData;
+      if (!uploadUrl) {
+        throw new Error("No upload URL returned from server");
+      }
 
       // 2. Direct binary upload to GCS
-      await fetch(uploadUrl, {
+      const uploadRes = await fetch(uploadUrl, {
         method: "PUT",
-        headers: { "Content-Type": file.type },
+        headers: { "Content-Type": mimeType },
         body: file,
       });
+
+      if (!uploadRes.ok) {
+        throw new Error(`Failed to upload image file (HTTP ${uploadRes.status})`);
+      }
 
       // 3. Save post metadata to database
       const postRes = await fetch("/api/posts", {
@@ -55,7 +70,10 @@ export default function NewPostPage() {
         body: JSON.stringify({ title, description, imageUrl: publicUrl }),
       });
 
-      if (!postRes.ok) throw new Error("Failed to save post");
+      const postData = await postRes.json();
+      if (!postRes.ok) {
+        throw new Error(postData.message || "Failed to save post");
+      }
 
       router.push("/");
       router.refresh();
