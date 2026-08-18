@@ -27,7 +27,7 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-4xl items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-xl font-black text-white">
           <Image 
-            src="/troll-icon.png" 
+            src="/icon.png" 
             alt="Troll Logo" 
             width={32} 
             height={32} 
