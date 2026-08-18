@@ -50,6 +50,30 @@ resource "google_sql_database" "db" {
 }
 
 # ==========================================
+# GCP: Cloud Storage (Image Uploads)
+# ==========================================
+resource "google_storage_bucket" "media_bucket" {
+  name          = "mca2533-meme-media-bucket" # Make sure this matches your exact bucket name!
+  location      = "ASIA-SOUTH1"               # Adjust if your bucket is in a different region
+  force_destroy = true                        # This tells Terraform it is allowed to delete the bucket even if it has images inside
+
+  # Automatically allow your Azure VM's exact IP address to upload files!
+  cors {
+    origin          = ["http://${azurerm_public_ip.ip.ip_address}:3000"]
+    method          = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    response_header = ["*"]
+    max_age_seconds = 3600
+  }
+}
+
+# Ensure the images are publicly viewable on the internet
+resource "google_storage_bucket_iam_member" "public_read" {
+  bucket = google_storage_bucket.media_bucket.name
+  role   = "roles/storage.objectViewer"
+  member = "allUsers"
+}
+
+# ==========================================
 # Azure: Compute & Networking
 # ==========================================
 resource "azurerm_resource_group" "rg" {
